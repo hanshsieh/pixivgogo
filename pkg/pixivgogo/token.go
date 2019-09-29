@@ -3,7 +3,6 @@ package pixivgogo
 import (
 	"crypto/md5"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -34,8 +33,8 @@ type Token struct {
 	TokenType TokenType `json:"token_type"`
 
 	// Scope is the scope of the token, may be empty string.
-	Scope string `json:"scope"`
-	User  *User  `json:"user"`
+	Scope string     `json:"scope"`
+	User  *MyAccount `json:"user"`
 }
 
 // Valid reports whether t is non-nil, has an AccessToken, and is not expired.
@@ -111,10 +110,10 @@ func (r *refreshTokenSource) Token() (*Token, error) {
 	return token, err
 }
 
-type failingTokenSource struct{}
+type emptyTokenSource struct{}
 
-func (f *failingTokenSource) Token() (*Token, error) {
-	return nil, errors.New("login is required")
+func (f *emptyTokenSource) Token() (*Token, error) {
+	return nil, nil
 }
 
 func (c *Client) CreateToken(username, password string) (*TokenResponse, error) {
@@ -135,10 +134,9 @@ func (c *Client) CreateToken(username, password string) (*TokenResponse, error) 
 		"username":       username,
 		"password":       password,
 	}
-	req.Debug = true
 	resp, err := c.client.Post(reqURL, headers, reqBody)
 	tokenResp := &TokenResponse{}
-	if err := c.unmarshalResponse(resp, err, tokenResp); err != nil {
+	if err := c.unmarshalAuthResponse(resp, err, tokenResp); err != nil {
 		return nil, err
 	}
 	return tokenResp, nil
@@ -162,7 +160,7 @@ func (c *Client) Login(username, password string) error {
 
 func (c *Client) Logout() error {
 	// TODO Should call API to logout
-	c.tokenSource = &failingTokenSource{}
+	c.tokenSource = &emptyTokenSource{}
 	return nil
 }
 
