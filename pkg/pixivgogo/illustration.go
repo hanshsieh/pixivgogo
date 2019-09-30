@@ -1,8 +1,6 @@
 package pixivgogo
 
 import (
-	"fmt"
-
 	"github.com/sleepingpig/pixivgogo/pkg/pixivgogo/datetime"
 
 	"github.com/google/go-querystring/query"
@@ -140,22 +138,8 @@ type Tag struct {
 // ranking should be used.
 // Login is required.
 func (c *Client) IllustRanking(filter *IllustRankingFilter) (*Illustrations, error) {
-	queryParams, err := query.Values(filter)
-	if err != nil {
-		return nil, err
-	}
-	headers, err := c.createHeaders()
-	if err != nil {
-		return nil, err
-	}
-	reqURL := fmt.Sprintf("%s/v1/illust/ranking", c.apiURL)
-	resp, err := c.client.Get(reqURL, queryParams, headers)
-	if err != nil {
-		return nil, err
-	}
 	illustrations := &Illustrations{}
-	err = c.unmarshalAPIResponse(resp, err, illustrations)
-	if err != nil {
+	if err := c.doGetRequest("/v1/illust/ranking", filter, illustrations); err != nil {
 		return nil, err
 	}
 	return illustrations, nil
@@ -181,22 +165,8 @@ const (
 // IllustDetail returns the details of an illustration.
 // It needs login.
 func (c *Client) IllustDetail(filter *IllustDetailFilter) (*IllustrationDetail, error) {
-	queryParams, err := query.Values(filter)
-	if err != nil {
-		return nil, err
-	}
-	headers, err := c.createHeaders()
-	if err != nil {
-		return nil, err
-	}
-	reqURL := fmt.Sprintf("%s/v1/illust/detail", c.apiURL)
-	resp, err := c.client.Get(reqURL, queryParams, headers)
-	if err != nil {
-		return nil, err
-	}
 	illustration := &IllustrationDetail{}
-	err = c.unmarshalAPIResponse(resp, err, illustration)
-	if err != nil {
+	if err := c.doGetRequest("/v1/illust/detail", filter, illustration); err != nil {
 		return nil, err
 	}
 	return illustration, nil
@@ -206,23 +176,30 @@ func (c *Client) IllustDetail(filter *IllustDetailFilter) (*IllustrationDetail, 
 // It needs login.
 // There's another API for getting recommended illustrations for not logged-in users.
 func (c *Client) IllustRecommend(filter *IllustRecommendFilter) (*Illustrations, error) {
-	queryParams, err := query.Values(filter)
-	if err != nil {
-		return nil, err
-	}
-	headers, err := c.createHeaders()
-	if err != nil {
-		return nil, err
-	}
-	reqURL := fmt.Sprintf("%s/v1/illust/recommended", c.apiURL)
-	resp, err := c.client.Get(reqURL, queryParams, headers)
-	if err != nil {
-		return nil, err
-	}
 	illustrations := &Illustrations{}
-	err = c.unmarshalAPIResponse(resp, err, illustrations)
-	if err != nil {
+	if err := c.doGetRequest("/v1/illust/recommended", filter, illustrations); err != nil {
 		return nil, err
 	}
 	return illustrations, nil
+}
+
+func (c *Client) doGetRequest(urlPath string, queryParamsStruct interface{}, respStruct interface{}) error {
+	queryParams, err := query.Values(queryParamsStruct)
+	if err != nil {
+		return err
+	}
+	headers, err := c.createHeaders()
+	if err != nil {
+		return err
+	}
+	reqURL := c.apiURL + urlPath
+	resp, err := c.client.Get(reqURL, queryParams, headers)
+	if err != nil {
+		return err
+	}
+	err = c.unmarshalAPIResponse(resp, err, respStruct)
+	if err != nil {
+		return err
+	}
+	return nil
 }
