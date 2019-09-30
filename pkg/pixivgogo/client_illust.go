@@ -2,11 +2,11 @@ package pixivgogo
 
 import "net/url"
 
-// IllustRanking returns the ranking of illustrations.
+// IllustsRanking returns the ranking of illustrations.
 // The given filter can be used for filtering the illustrations, and control which kind of
 // ranking should be used.
 // Login is required.
-func (c *Client) IllustRanking(filter *RankingIllustsFilter) (*RankingIllustrations, error) {
+func (c *Client) IllustsRanking(filter *RankingIllustsFilter) (*RankingIllustrations, error) {
 	illustrations := &RankingIllustrations{}
 	if err := c.doGetRequest("/v1/illust/ranking", filter, illustrations); err != nil {
 		return nil, err
@@ -20,10 +20,10 @@ func (c *Client) IllustRanking(filter *RankingIllustsFilter) (*RankingIllustrati
 	return illustrations, nil
 }
 
-// IllustRecommend returns the recommended illustrations based on the logged in user's preference.
+// IllustsRecommend returns the recommended illustrations based on the logged in user's preference.
 // It needs login.
 // There's another API for getting recommended illustrations for not logged-in users.
-func (c *Client) IllustRecommend(filter *RecommendIllustsFilter) (*RecommendIllustrations, error) {
+func (c *Client) IllustsRecommend(filter *RecommendIllustsFilter) (*RecommendIllustrations, error) {
 	illustrations := &RecommendIllustrations{}
 	if err := c.doGetRequest("/v1/illust/recommended", filter, illustrations); err != nil {
 		return nil, err

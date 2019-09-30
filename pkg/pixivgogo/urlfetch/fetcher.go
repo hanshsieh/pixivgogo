@@ -66,11 +66,11 @@ func (f *Fetcher) findFilePathToStore(srcURLStr string, dirPath string, overwrit
 	}
 	lastSlashIdx := strings.LastIndex(srcURL.Path, "/")
 	if lastSlashIdx < 0 {
-		return "", fmt.Errorf("unable to decide the file name from url %s", srcURLStr)
+		return "", fmt.Errorf("unable to decide the file name from url %q", srcURLStr)
 	}
 	fileName := srcURL.Path[lastSlashIdx+1:]
 	if fileName == "" {
-		return "", fmt.Errorf("unable to decide the file name from url %s", srcURLStr)
+		return "", fmt.Errorf("unable to decide the file name from url %q", srcURLStr)
 	}
 	filePath := path.Join(dirPath, fileName)
 	if err := f.shouldAbleToSaveFile(filePath, overwrite); err != nil {
