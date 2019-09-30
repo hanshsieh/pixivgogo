@@ -1,6 +1,8 @@
 package pixivgogo
 
-import "net/url"
+import (
+	"net/url"
+)
 
 // IllustRanking returns the ranking of illustrations.
 // The given filter can be used for filtering the illustrations, and control which kind of

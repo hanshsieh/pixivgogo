@@ -1,7 +1,7 @@
 package pixivgogo
 
 import (
-	"github.com/sleepingpig/pixivgogo/pkg/pixivgogo/datetime"
+	"github.com/sleepingpig/pixivgogo/pixivgogo/datetime"
 )
 
 type RankingIllustsFilter struct {

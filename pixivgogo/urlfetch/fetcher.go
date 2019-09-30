@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sleepingpig/pixivgogo/pkg/pixivgogo"
+	pixivgogo2 "github.com/sleepingpig/pixivgogo"
 
 	"github.com/imroc/req"
 )
@@ -22,7 +22,7 @@ type Fetcher struct {
 func NewFetcher() *Fetcher {
 	return &Fetcher{
 		client:   req.New(),
-		referrer: pixivgogo.DefaultAPIURL,
+		referrer: pixivgogo2.DefaultAPIURL,
 	}
 }
 
