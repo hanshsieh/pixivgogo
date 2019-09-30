@@ -62,41 +62,55 @@ type Illustrations struct {
 	NextURL       string         `json:"next_url,omitempty"`
 }
 
+type IllustrationDetail struct {
+	Illustration *Illustration `json:"illust"`
+}
+
 type Illustration struct {
-	ID             int64                `json:"id"`
-	Title          string               `json:"title"`
-	Type           string               `json:"illust"`
-	ImageURLs      *IllustImageURLs     `json:"image_urls,omitempty"`
-	Caption        string               `json:"caption"`
-	Restrict       int                  `json:"restrict"`
-	User           *Account             `json:"user"`
-	Tags           []Tag                `json:"tags"`
-	Tools          []string             `json:"tools"`
-	CreateDate     datetime.Time        `json:"create_date"`
-	PageCount      int                  `json:"page_count"`
-	Width          int                  `json:"width"`
-	Height         int                  `json:"height"`
-	SanityLevel    int                  `json:"sanity_level"`
-	XRestrict      int                  `json:"x_restrict"`
-	Series         *Series              `json:"series,omitempty"`
-	MetaSinglePage *MetaSinglePage      `json:"meta_single_page,omitempty"`
-	MetaPages      []*MetaPageImageURLs `json:"meta_pages,omitempty"`
-	TotalView      int                  `json:"total_view"`
-	TotalBookmarks int                  `json:"total_bookmarks"`
-	Bookmarked     bool                 `json:"is_bookmarked"`
-	Visible        bool                 `json:"visible"`
-	Muted          bool                 `json:"is_muted"`
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+	// ImageURLs contains the thumbnail image URLs of the illustration.
+	// To get the original image URLs, see "MetaSinglePage" and "MetaPages".
+	ImageURLs   *IllustImageURLs `json:"image_urls,omitempty"`
+	Caption     string           `json:"caption"`
+	Restrict    int              `json:"restrict"`
+	User        *Account         `json:"user"`
+	Tags        []Tag            `json:"tags"`
+	Tools       []string         `json:"tools"`
+	CreateDate  datetime.Time    `json:"create_date"`
+	PageCount   int              `json:"page_count"`
+	Width       int              `json:"width"`
+	Height      int              `json:"height"`
+	SanityLevel int              `json:"sanity_level"`
+	XRestrict   int              `json:"x_restrict"`
+	Series      *Series          `json:"series,omitempty"`
+
+	// MetaSinglePage will contain non-empty URLs when the illustration contain
+	// only one image.
+	MetaSinglePage *MetaSinglePage `json:"meta_single_page,omitempty"`
+
+	// MetaPages will be non-empty when the illustration contains multiple
+	// images.
+	MetaPages      []*MetaPage `json:"meta_pages,omitempty"`
+	TotalView      int         `json:"total_view"`
+	TotalBookmarks int         `json:"total_bookmarks"`
+	Bookmarked     bool        `json:"is_bookmarked"`
+	Visible        bool        `json:"visible"`
+	Muted          bool        `json:"is_muted"`
 }
 
+// MetaPage contains the information of one of the multiple pages of an illustration.
 type MetaPage struct {
-	ImageURLs []*MetaPageImageURLs `json:"image_urls"`
+	ImageURLs *MetaPageImageURLs `json:"image_urls"`
 }
 
+// MetaPageImageURLs contains the image URLs of a meta page.
 type MetaPageImageURLs struct {
 	SquareMedium string `json:"square_medium,omitempty"`
 	Medium       string `json:"medium,omitempty"`
 	Large        string `json:"large,omitempty"`
-	Original     string `json:"original"`
+	Original     string `json:"original,omitempty"`
 }
 
 type Series struct {
@@ -104,8 +118,10 @@ type Series struct {
 	Title string `json:"title"`
 }
 
+// MetaSinglePage contains the image URLs when the illustration contain only a single image.
 type MetaSinglePage struct {
-	OriginalImageURL string `json:"original_image_url"`
+	// OriginalImageURL is the URL to the original size of the illustration.
+	OriginalImageURL string `json:"original_image_url,omitempty"`
 }
 
 type IllustImageURLs struct {
@@ -143,4 +159,32 @@ func (c *Client) IllustRanking(filter *IllustRankingFilter) (*Illustrations, err
 		return nil, err
 	}
 	return illustrations, nil
+}
+
+type IllustDetailFilter struct {
+	ID int64 `url:"illust_id,omitempty"`
+}
+
+// IllustDetail returns the details of an illustration.
+// It needs login.
+func (c *Client) IllustDetail(filter *IllustDetailFilter) (*IllustrationDetail, error) {
+	queryParams, err := query.Values(filter)
+	if err != nil {
+		return nil, err
+	}
+	headers, err := c.createHeaders()
+	if err != nil {
+		return nil, err
+	}
+	reqURL := fmt.Sprintf("%s/v1/illust/detail", c.apiURL)
+	resp, err := c.client.Get(reqURL, queryParams, headers)
+	if err != nil {
+		return nil, err
+	}
+	illustration := &IllustrationDetail{}
+	err = c.unmarshalAPIResponse(resp, err, illustration)
+	if err != nil {
+		return nil, err
+	}
+	return illustration, nil
 }
