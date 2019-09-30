@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -116,7 +117,28 @@ func (f *emptyTokenSource) Token() (*Token, error) {
 	return nil, nil
 }
 
-func (c *Client) CreateToken(username, password string) (*TokenResponse, error) {
+type TokenCreate struct {
+	SecureURL    int    `schema:"get_secure_url"`
+	ClientID     string `schema:"client_id,omitempty"`
+	ClientSecret string `schema:"client_secret,omitempty"`
+	GrantType    string `schema:"grant_type"`
+	Username     string `schema:"username,omitempty"`
+	Password     string `schema:"password,omitempty"`
+}
+
+func (c *Client) CreateTokenWithPassword(username, password string) (*TokenResponse, error) {
+	tokenCreate := &TokenCreate{
+		SecureURL:    1,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		GrantType:    "password",
+		Username:     username,
+		Password:     password,
+	}
+	return c.CreateToken(tokenCreate)
+}
+
+func (c *Client) CreateToken(tokenCreate *TokenCreate) (*TokenResponse, error) {
 	clientTime := time.Now().UTC().Format(time.RFC3339)
 	clientHash := fmt.Sprintf("%x", md5.Sum([]byte(clientTime+hashSecret)))
 	headers := req.Header{
@@ -125,14 +147,9 @@ func (c *Client) CreateToken(username, password string) (*TokenResponse, error) 
 		"X-Client-Hash": clientHash,
 	}
 	reqURL := fmt.Sprintf("%s/auth/token", c.authURL)
-
-	reqBody := req.Param{
-		"get_secure_url": 1,
-		"client_id":      clientID,
-		"client_secret":  clientSecret,
-		"grant_type":     "password",
-		"username":       username,
-		"password":       password,
+	reqBody := url.Values{}
+	if err := c.urlValuesEncoder.Encode(tokenCreate, reqBody); err != nil {
+		return nil, err
 	}
 	resp, err := c.client.Post(reqURL, headers, reqBody)
 	tokenResp := &TokenResponse{}
@@ -143,7 +160,7 @@ func (c *Client) CreateToken(username, password string) (*TokenResponse, error) 
 }
 
 func (c *Client) Login(username, password string) error {
-	tokenResp, err := c.CreateToken(username, password)
+	tokenResp, err := c.CreateTokenWithPassword(username, password)
 	if err != nil {
 		return err
 	}

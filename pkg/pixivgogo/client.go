@@ -1,6 +1,9 @@
 package pixivgogo
 
 import (
+	"net/url"
+
+	"github.com/gorilla/schema"
 	"github.com/imroc/req"
 )
 
@@ -17,18 +20,30 @@ const (
 )
 
 type Client struct {
-	tokenSource TokenSource
-	client      *req.Req
-	authURL     string
-	apiURL      string
+	tokenSource      TokenSource
+	client           *req.Req
+	authURL          string
+	apiURL           string
+	urlValuesEncoder urlValuesEncoder
+	urlValuesDecoder urlValuesDecoder
+}
+
+type urlValuesEncoder interface {
+	Encode(src interface{}, dst map[string][]string) error
+}
+
+type urlValuesDecoder interface {
+	Decode(dst interface{}, src map[string][]string) error
 }
 
 func NewClient() *Client {
 	return &Client{
-		tokenSource: &emptyTokenSource{},
-		client:      req.New(),
-		authURL:     DefaultAuthURL,
-		apiURL:      DefaultAPIURL,
+		tokenSource:      &emptyTokenSource{},
+		client:           req.New(),
+		authURL:          DefaultAuthURL,
+		apiURL:           DefaultAPIURL,
+		urlValuesEncoder: schema.NewEncoder(),
+		urlValuesDecoder: schema.NewDecoder(),
 	}
 }
 
@@ -84,4 +99,26 @@ func (c *Client) createHeaders() (req.Header, error) {
 	return req.Header{
 		"Authorization": "Bearer " + token.AccessToken,
 	}, nil
+}
+
+func (c *Client) doGetRequest(urlPath string, queryParamsStruct interface{}, respStruct interface{}) error {
+	queryParams := url.Values{}
+	err := c.urlValuesEncoder.Encode(queryParamsStruct, queryParams)
+	if err != nil {
+		return err
+	}
+	headers, err := c.createHeaders()
+	if err != nil {
+		return err
+	}
+	reqURL := c.apiURL + urlPath
+	resp, err := c.client.Get(reqURL, queryParams, headers)
+	if err != nil {
+		return err
+	}
+	err = c.unmarshalAPIResponse(resp, err, respStruct)
+	if err != nil {
+		return err
+	}
+	return nil
 }

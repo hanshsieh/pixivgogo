@@ -2,29 +2,27 @@ package pixivgogo
 
 import (
 	"github.com/sleepingpig/pixivgogo/pkg/pixivgogo/datetime"
-
-	"github.com/google/go-querystring/query"
 )
 
-type IllustRankingFilter struct {
+type RankingIllustsFilter struct {
 	// Filter is the filter for the illustrations.
 	// Possible values: "for_ios", "for_android"
 	// This field is optional.
-	Filter IllustFilter `url:"filter,omitempty"`
+	Filter IllustFilter `schema:"filter,omitempty"`
 
 	// Mode of the ranking.
 	// This field is optional.
 	// TODO What's the default?
-	Mode RankMode `url:"mode,omitempty"`
+	Mode RankMode `schema:"mode,omitempty"`
 
 	// Date can be used to query the ranking in the past.
 	// This field is optional.
-	Date *datetime.Date `url:"date,omitempty"`
+	Date *datetime.Date `schema:"date,omitempty"`
 
 	// Offset is the offset of the illustrations to query.
 	// Starting from 0.
 	// This field is optional.
-	Offset int `url:"offset,omitempty"`
+	Offset int `schema:"offset,omitempty"`
 }
 
 type IllustFilter string
@@ -55,9 +53,25 @@ const (
 	RANK_MODE_MONTH_MANGA    RankMode = "month_manga"
 )
 
-type Illustrations struct {
-	Illustrations []Illustration `json:"illusts"`
-	NextURL       string         `json:"next_url,omitempty"`
+type RankingIllustrations struct {
+	Illustrations []*Illustration       `json:"illusts"`
+	NextURL       string                `json:"next_url,omitempty"`
+	NextFilter    *RankingIllustsFilter `json:"-"`
+}
+
+type RecommendIllustrations struct {
+	Illustrations        []*Illustration         `json:"illusts"`
+	RankingIllustrations []*Illustration         `json:"ranking_illusts"`
+	ContestExists        bool                    `json:"contest_exists"`
+	PrivacyPolicy        *PrivacyPolicy          `json:"privacy_policy,omitempty"`
+	NextURL              string                  `json:"next_url,omitempty"`
+	NextFilter           *RecommendIllustsFilter `json:"-"`
+}
+
+type PrivacyPolicy struct {
+	Version string `json:"version,omitempty"`
+	Message string `json:"message,omitempty"`
+	URL     string `json:"url,omitempty"`
 }
 
 type IllustrationDetail struct {
@@ -133,26 +147,27 @@ type Tag struct {
 	TranslatedName string `json:"translated_name,omitempty"`
 }
 
-// IllustRanking returns the ranking of illustrations.
-// The given filter can be used for filtering the illustrations, and control which kind of
-// ranking should be used.
-// Login is required.
-func (c *Client) IllustRanking(filter *IllustRankingFilter) (*Illustrations, error) {
-	illustrations := &Illustrations{}
-	if err := c.doGetRequest("/v1/illust/ranking", filter, illustrations); err != nil {
-		return nil, err
-	}
-	return illustrations, nil
-}
-
 type IllustDetailFilter struct {
-	ID int64 `url:"illust_id,omitempty"`
+	ID int64 `schema:"illust_id,omitempty"`
 }
 
-type IllustRecommendFilter struct {
-	ContentType         ContentType  `url:"content_type,omitempty"`
-	Filter              IllustFilter `url:"filter,omitempty"`
-	IncludeRankingLabel bool         `url:"include_ranking_label"`
+type RecommendIllustsFilter struct {
+	Filter                       IllustFilter `schema:"filter,omitempty"`
+	MinBookmarkIDForRecentIllust string       `schema:"min_bookmark_id_for_recent_illust,omitempty"`
+	MaxBookmarkIDForRecommend    string       `schema:"max_bookmark_id_for_recommend,omitempty"`
+	Offset                       int          `schema:"offset"`
+
+	// IncludeRankingIllusts indicates that whether the illustration ranking should also be included
+	// in the result.
+	// Notice that even if it's set to true, the "next_url" in the response will still
+	// set it to false.
+	IncludeRankingIllusts bool `schema:"include_ranking_illusts"`
+
+	// IncludePrivacyPolicy indicates that whether the privacy policy info should also be included
+	// in the result.
+	// Notice that even if it's set to true, the "next_url" in the response will still
+	// set it to false.
+	IncludePrivacyPolicy bool `schema:"include_privacy_policy"`
 }
 
 type ContentType string
@@ -161,45 +176,3 @@ const (
 	TypeIllust ContentType = "illust"
 	TypeManga  ContentType = "manga"
 )
-
-// IllustDetail returns the details of an illustration.
-// It needs login.
-func (c *Client) IllustDetail(filter *IllustDetailFilter) (*IllustrationDetail, error) {
-	illustration := &IllustrationDetail{}
-	if err := c.doGetRequest("/v1/illust/detail", filter, illustration); err != nil {
-		return nil, err
-	}
-	return illustration, nil
-}
-
-// IllustRecommend returns the recommended illustrations based on the logged in user's preference.
-// It needs login.
-// There's another API for getting recommended illustrations for not logged-in users.
-func (c *Client) IllustRecommend(filter *IllustRecommendFilter) (*Illustrations, error) {
-	illustrations := &Illustrations{}
-	if err := c.doGetRequest("/v1/illust/recommended", filter, illustrations); err != nil {
-		return nil, err
-	}
-	return illustrations, nil
-}
-
-func (c *Client) doGetRequest(urlPath string, queryParamsStruct interface{}, respStruct interface{}) error {
-	queryParams, err := query.Values(queryParamsStruct)
-	if err != nil {
-		return err
-	}
-	headers, err := c.createHeaders()
-	if err != nil {
-		return err
-	}
-	reqURL := c.apiURL + urlPath
-	resp, err := c.client.Get(reqURL, queryParams, headers)
-	if err != nil {
-		return err
-	}
-	err = c.unmarshalAPIResponse(resp, err, respStruct)
-	if err != nil {
-		return err
-	}
-	return nil
-}
