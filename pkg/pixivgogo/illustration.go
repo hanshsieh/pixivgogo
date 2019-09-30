@@ -79,9 +79,9 @@ type IllustrationDetail struct {
 }
 
 type Illustration struct {
-	ID    int64  `json:"id"`
-	Title string `json:"title"`
-	Type  string `json:"type"`
+	ID    int64      `json:"id"`
+	Title string     `json:"title"`
+	Type  IllustType `json:"type"`
 	// ImageURLs contains the thumbnail image URLs of the illustration.
 	// To get the original image URLs, see "MetaSinglePage" and "MetaPages".
 	ImageURLs   *IllustImageURLs `json:"image_urls,omitempty"`
@@ -111,6 +111,14 @@ type Illustration struct {
 	Visible        bool        `json:"visible"`
 	Muted          bool        `json:"is_muted"`
 }
+
+type IllustType string
+
+const (
+	ILLUST_TYPE_ILLUST IllustType = "illust"
+	ILLUST_TYPE_UGOIRA IllustType = "ugoira"
+	ILLUST_TYPE_MANGA  IllustType = "manga"
+)
 
 // MetaPage contains the information of one of the multiple pages of an illustration.
 type MetaPage struct {

@@ -3,6 +3,8 @@
 *It's still under early development. 
 Only a small subset of APIs have been implemented.*
 
+## Usage
+
 Example:
 ```
 import (
@@ -34,4 +36,15 @@ func jsonMarshal(src interface{}) string {
 	}
 	return string(jsonBytes)
 }
+```
+
+## Tool
+A command line tool is provided.  
+You can build the tool as below:  
+```
+go build ./cmd/pixivtool/
+```
+To cross compile, add the environment variables, e.g.  
+```
+GOOS=windows GOARCH=386 go build ./cmd/pixivtool/
 ```
