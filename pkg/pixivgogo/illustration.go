@@ -12,7 +12,7 @@ type IllustRankingFilter struct {
 	// Filter is the filter for the illustrations.
 	// Possible values: "for_ios", "for_android"
 	// This field is optional.
-	Filter RankFilter `url:"filter,omitempty"`
+	Filter IllustFilter `url:"filter,omitempty"`
 
 	// Mode of the ranking.
 	// This field is optional.
@@ -29,11 +29,11 @@ type IllustRankingFilter struct {
 	Offset int `url:"offset,omitempty"`
 }
 
-type RankFilter string
+type IllustFilter string
 
 const (
-	RANK_FILTER_FOR_IOS     RankFilter = "for_ios"
-	RANK_FILTER_FOR_ANDROID RankFilter = "for_android"
+	RANK_FILTER_FOR_IOS     IllustFilter = "for_ios"
+	RANK_FILTER_FOR_ANDROID IllustFilter = "for_android"
 )
 
 type RankMode string
@@ -165,6 +165,19 @@ type IllustDetailFilter struct {
 	ID int64 `url:"illust_id,omitempty"`
 }
 
+type IllustRecommendFilter struct {
+	ContentType         ContentType  `url:"content_type,omitempty"`
+	Filter              IllustFilter `url:"filter,omitempty"`
+	IncludeRankingLabel bool         `url:"include_ranking_label"`
+}
+
+type ContentType string
+
+const (
+	TypeIllust ContentType = "illust"
+	TypeManga  ContentType = "manga"
+)
+
 // IllustDetail returns the details of an illustration.
 // It needs login.
 func (c *Client) IllustDetail(filter *IllustDetailFilter) (*IllustrationDetail, error) {
@@ -187,4 +200,29 @@ func (c *Client) IllustDetail(filter *IllustDetailFilter) (*IllustrationDetail, 
 		return nil, err
 	}
 	return illustration, nil
+}
+
+// IllustRecommend returns the recommended illustrations based on the logged in user's preference.
+// It needs login.
+// There's another API for getting recommended illustrations for not logged-in users.
+func (c *Client) IllustRecommend(filter *IllustRecommendFilter) (*Illustrations, error) {
+	queryParams, err := query.Values(filter)
+	if err != nil {
+		return nil, err
+	}
+	headers, err := c.createHeaders()
+	if err != nil {
+		return nil, err
+	}
+	reqURL := fmt.Sprintf("%s/v1/illust/recommended", c.apiURL)
+	resp, err := c.client.Get(reqURL, queryParams, headers)
+	if err != nil {
+		return nil, err
+	}
+	illustrations := &Illustrations{}
+	err = c.unmarshalAPIResponse(resp, err, illustrations)
+	if err != nil {
+		return nil, err
+	}
+	return illustrations, nil
 }
