@@ -1,5 +1,7 @@
 # PixivGoGo - Golang client for Pixiv
 
+[![Build Status](https://travis-ci.com/sleepingpig/pixivgogo.svg?branch=master)](https://travis-ci.com/sleepingpig/pixivgogo)
+
 *It's still under early development. 
 Only a small subset of APIs have been implemented.*
 
